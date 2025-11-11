@@ -20,8 +20,11 @@ It is expected that `frontend/assets/v1/dist` folder will contain the output art
 The LMS uses Python 3.10, and there are dependencies that won't work with the newer Python versions out of the box. 
 If your local system Python version is different, you can install Python 3.10 using [pyenv](https://realpython.com/intro-to-pyenv/) tool. 
 
-Having installed Python, you need to create a virtual environment with `pipenv`. Install pipenv using `pip install pipenv`
-and run `pipenv install -d` to install the dependencies, along with the dev packages (it installs django debug toolbar). Activate the virtual environment with `pipenv shell`.
+Having installed Python, you need to set up the project with `uv`. Install uv using the [official installer](https://github.com/astral-sh/uv#installation) or `pip install uv`.
+
+Then run `uv sync --extra dev` to create a virtual environment and install all dependencies, including dev packages (it installs django debug toolbar).
+
+All Python commands should be run through `uv run` which automatically uses the project's virtual environment.
 
 ### Create and edit a local copy of the environment config
 Copy the environment config: `cp lms/settings/.env.example .env`
@@ -36,7 +39,7 @@ SITE_ID=1
 
 ### Prepare static files for serving
 ```
-ENV_FILE=.env python manage.py collectstatic --noinput --ignore "webpack-stats-v*.json"
+ENV_FILE=.env uv run python manage.py collectstatic --noinput --ignore "webpack-stats-v*.json"
 ```
 
 ### Initialize the database 
@@ -51,18 +54,28 @@ Start Redis in Docker container:
 docker run -d -p 127.0.0.1:6379:6379 --name lms-redis redis:6-alpine redis-server --appendonly yes
 ```
 
-and apply migrations, that essentially create and initialize the database: `ENV_FILE=.env python ./manage.py migrate`
+and apply migrations, that essentially create and initialize the database:
+```
+ENV_FILE=.env uv run python manage.py migrate
+```
 
 ### Run the backend in development mode
 
 ```
-ENV_FILE=.env python manage.py runserver localhost:8001
+ENV_FILE=.env uv run python manage.py runserver localhost:8001
 ```
 
 ### Run tests
 
-Run tests using pytest. 
-If you want to run tests from some specific folders, append the folder names to the command: `pytest apps/core`
+Run tests using pytest through uv:
+```
+uv run pytest
+```
+
+If you want to run tests from some specific folders, append the folder names to the command:
+```
+uv run pytest apps/core
+```
 
 ### Testing the JetBrains Academy integration locally
 

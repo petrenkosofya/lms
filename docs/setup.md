@@ -31,7 +31,12 @@ ALTER USER csc with CREATEDB;
 GRANT ALL privileges ON DATABASE cscdb TO csc;
 ```
 
-* Create virtualenv for the project, activate it and install all python dependencies with pipenv (see Pipenv.lock in the root dir)
+* Create virtualenv for the project, activate it and install all python dependencies with uv:
+  ```bash
+  uv venv
+  source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+  uv pip install -e ".[dev]"
+  ```
 
 * Run migrations
 ```bash

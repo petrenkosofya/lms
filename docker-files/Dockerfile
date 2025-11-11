@@ -14,12 +14,12 @@ RUN npm run ${WEBPACK_ENVIRONMENT}:1
 FROM python:3.10-slim-bookworm AS builder
 
 # Python requirements
-COPY Pipfile* /tmp/
+COPY pyproject.toml /tmp/
 RUN pip install --upgrade pip \
-    && pip install --no-cache-dir pipenv==2022.11.11 \
+    && pip install --no-cache-dir uv \
     && cd /tmp/ \
-    && pipenv --python /usr/local/bin/python requirements > /tmp/requirements-prod.txt \
-    && pipenv --python /usr/local/bin/python requirements --dev-only > /tmp/requirements-dev.txt
+    && uv pip compile pyproject.toml -o /tmp/requirements-prod.txt \
+    && uv pip compile pyproject.toml --extra dev -o /tmp/requirements-dev.txt
 
 FROM python:3.10-slim-bookworm
 LABEL maintainer="webmaster@compscicenter.ru"
@@ -32,7 +32,7 @@ RUN groupadd --gid=101 ${APP_USER} && useradd -r --no-log-init --uid=101 --gid $
 # Install packages needed to run your application (not build deps):
 #   libpcre3 -- regular expressions support
 #   postgresql-client -- for running database commands
-#   git -- some app dependencies (like Hoep) are stored on github
+#   git -- for git-based dependencies if needed
 #   gosu -- drop root priviligies in docker-entrypoint.sh
 #   mime-support -- for serving static assets with correct mime types
 # We need to recreate the /usr/share/man/man{1..8} directories first because

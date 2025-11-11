@@ -8,12 +8,11 @@ from typing import Any, Dict, Iterable, Iterator, List, Optional
 from urllib.parse import parse_qs, urlparse
 
 import bleach
-import hoep as h
+import markdown
 import sqids.constants
 from django.conf import settings
 from django.core.cache import InvalidCacheBackendError, caches
 from django.core.mail import EmailMultiAlternatives
-from django.db.models import Max, Min
 from django.template import loader
 from django.utils import formats
 from django.utils.html import linebreaks, strip_tags
@@ -26,7 +25,7 @@ SQIDS_ALPHABET = list(sqids.constants.DEFAULT_ALPHABET)
 _sqids_random = random.Random()
 _sqids_random.seed(settings.HASHIDS_SALT)
 _sqids_random.shuffle(SQIDS_ALPHABET)
-SQIDS_ALPHABET = ''.join(SQIDS_ALPHABET)
+SQIDS_ALPHABET = "".join(SQIDS_ALPHABET)
 sqids = Sqids(alphabet=SQIDS_ALPHABET, min_length=8)
 
 
@@ -36,78 +35,90 @@ class Empty(enum.Enum):
 
 _empty = Empty.token
 
-# Some details here https://github.com/Anomareh/Hoep
-MARKDOWN_EXTENSIONS = (h.EXT_FENCED_CODE |
-                       h.EXT_AUTOLINK |
-                       h.EXT_STRIKETHROUGH |
-                       h.EXT_TABLES |
-                       h.EXT_QUOTE |
-                       h.EXT_NO_INTRA_EMPHASIS |
-                       h.EXT_SPACE_HEADERS |
-                       h.EXT_MATH |
-                       h.EXT_MATH_EXPLICIT)
-MARKDOWN_RENDER_FLAGS = 0
-markdown = h.Hoep(MARKDOWN_EXTENSIONS, MARKDOWN_RENDER_FLAGS)
+# Using Python-Markdown with extensions for feature parity with hoep
+# Extensions provide: fenced code, tables, strikethrough, math (LaTeX), autolink, etc.
+MARKDOWN_EXTENSIONS = [
+    "fenced_code",  # Fenced code blocks (replaces EXT_FENCED_CODE)
+    "tables",  # Tables (replaces EXT_TABLES)
+    "nl2br",  # Newline to break (similar to EXT_SPACE_HEADERS)
+    "sane_lists",  # Better list handling
+    "codehilite",  # Code highlighting
+    "pymdownx.superfences",  # Enhanced fenced code blocks with syntax highlighting
+    "pymdownx.arithmatex",  # Math/LaTeX support (replaces EXT_MATH and EXT_MATH_EXPLICIT)
+    "pymdownx.tasklist",  # Task lists
+    "pymdownx.tilde",  # Strikethrough support (replaces EXT_STRIKETHROUGH)
+    "pymdownx.caret",  # Superscript support
+    "pymdownx.mark",  # Mark/highlight support
+    "pymdownx.emoji",  # Emoji support
+    "pymdownx.magiclink",  # Autolink support (replaces EXT_AUTOLINK)
+]
+
+md = markdown.Markdown(extensions=MARKDOWN_EXTENSIONS)
 
 # This is not really about markdown, This is about html tags that will be
 # saved after markdown rendering
-MARKDOWN_ALLOWED_TAGS = frozenset({
-    'a',
-    'b',
-    'blockquote',
-    'br',
-    'code',
-    'del',
-    'div',
-    'dl',
-    'dd',
-    'dt',
-    'em',
-    'h1',
-    'h2',
-    'h3',
-    'h4',
-    'h5',
-    'hr',
-    'i',
-    'iframe',
-    'img',
-    'li',
-    'ol',
-    'p',
-    'pre',
-    'q',
-    'strike',
-    'strong',
-    'table',
-    'tbody',
-    'td',
-    'th',
-    'thead',
-    'tr',
-    'ul',
-})
+MARKDOWN_ALLOWED_TAGS = frozenset(
+    {
+        "a",
+        "b",
+        "blockquote",
+        "br",
+        "code",
+        "del",
+        "div",
+        "dl",
+        "dd",
+        "dt",
+        "em",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "hr",
+        "i",
+        "iframe",
+        "img",
+        "li",
+        "ol",
+        "p",
+        "pre",
+        "q",
+        "strike",
+        "strong",
+        "table",
+        "tbody",
+        "td",
+        "th",
+        "thead",
+        "tr",
+        "ul",
+    }
+)
 MARKDOWN_ALLOWED_ATTRS = {
-    '*': ['class'],
-    'a': ['href', 'aria-expanded', 'role', 'data-toggle'],
-    'img': ['src'],
-    'iframe': ['src', 'height', 'width', 'allowfullscreen', 'frameborder'],
-    'div': ['id', 'role', 'aria-labelledby', 'aria-expanded']
+    "*": ["class"],
+    "a": ["href", "aria-expanded", "role", "data-toggle"],
+    "img": ["src"],
+    "iframe": ["src", "height", "width", "allowfullscreen", "frameborder"],
+    "div": ["id", "role", "aria-labelledby", "aria-expanded"],
 }
 
 
 def render_markdown(text):
     """Renders markdown, then sanitizes html based on allowed tags"""
-    md_rendered = markdown.render(text)
-    return bleach.clean(md_rendered, tags=MARKDOWN_ALLOWED_TAGS,
-                        attributes=MARKDOWN_ALLOWED_ATTRS)
+    # Reset the markdown instance to clear any previous state
+    md.reset()
+    md_rendered = md.convert(text)
+    return bleach.clean(
+        md_rendered, tags=MARKDOWN_ALLOWED_TAGS, attributes=MARKDOWN_ALLOWED_ATTRS
+    )
 
 
 def render_markdown_and_cache(value, fragment_name, expires_in=0, *vary_on):
     try:
-        fragment_cache = caches['markdown_fragments']
+        fragment_cache = caches["markdown_fragments"]
     except InvalidCacheBackendError:
-        fragment_cache = caches['default']
+        fragment_cache = caches["default"]
     cache_key = make_template_fragment_key(fragment_name, vary_on)
     rendered = fragment_cache.get(cache_key)
     if rendered is None:
@@ -118,7 +129,7 @@ def render_markdown_and_cache(value, fragment_name, expires_in=0, *vary_on):
 
 
 def admin_datetime(dt: datetime.datetime) -> str:
-    return formats.date_format(dt, 'j E Y г. G:i e')
+    return formats.date_format(dt, "j E Y г. G:i e")
 
 
 """
@@ -128,72 +139,72 @@ symbol since it's not valid for CN values in LDAP accounts. Common Name used
 as a branch name in `gerrit` code review system.
 """
 _ru_en_mapping = {
-    'А': "A",
-    'Б': "B",
-    'В': "V",
-    'Г': "G",
-    'Д': "D",
-    'Е': "E",
-    'Ё': "E",
-    'Ж': "ZH",
-    'З': "Z",
-    'И': "I",
-    'Й': "I",
-    'К': "K",
-    'Л': "L",
-    'М': "M",
-    'Н': "N",
-    'О': "O",
-    'П': "P",
-    'Р': "R",
-    'С': "S",
-    'Т': "T",
-    'У': "U",
-    'Ф': "F",
-    'Х': "KH",
-    'Ц': "TS",
-    'Ч': "CH",
-    'Ш': "SH",
-    'Щ': "SHCH",
-    'Ъ': "IE",
-    'Ы': "Y",
-    'Ь': None,
-    'Э': "E",
-    'Ю': "IU",
-    'Я': "IA",
-    'а': "a",
-    'б': "b",
-    'в': "v",
-    'г': "g",
-    'д': "d",
-    'е': "e",
-    'ё': "e",
-    'ж': "zh",
-    'з': "z",
-    'и': "i",
-    'й': "i",
-    'к': "k",
-    'л': "l",
-    'м': "m",
-    'н': "n",
-    'о': "o",
-    'п': "p",
-    'р': "r",
-    'с': "s",
-    'т': "t",
-    'у': "u",
-    'ф': "f",
-    'х': "kh",
-    'ц': "ts",
-    'ч': "ch",
-    'ш': "sh",
-    'щ': "shch",
-    'ъ': "ie",
-    'ы': "y",
-    'ь': None,
-    'э': "e",
-    'ю': "iu",
-    'я': "ia",
+    "А": "A",
+    "Б": "B",
+    "В": "V",
+    "Г": "G",
+    "Д": "D",
+    "Е": "E",
+    "Ё": "E",
+    "Ж": "ZH",
+    "З": "Z",
+    "И": "I",
+    "Й": "I",
+    "К": "K",
+    "Л": "L",
+    "М": "M",
+    "Н": "N",
+    "О": "O",
+    "П": "P",
+    "Р": "R",
+    "С": "S",
+    "Т": "T",
+    "У": "U",
+    "Ф": "F",
+    "Х": "KH",
+    "Ц": "TS",
+    "Ч": "CH",
+    "Ш": "SH",
+    "Щ": "SHCH",
+    "Ъ": "IE",
+    "Ы": "Y",
+    "Ь": None,
+    "Э": "E",
+    "Ю": "IU",
+    "Я": "IA",
+    "а": "a",
+    "б": "b",
+    "в": "v",
+    "г": "g",
+    "д": "d",
+    "е": "e",
+    "ё": "e",
+    "ж": "zh",
+    "з": "z",
+    "и": "i",
+    "й": "i",
+    "к": "k",
+    "л": "l",
+    "м": "m",
+    "н": "n",
+    "о": "o",
+    "п": "p",
+    "р": "r",
+    "с": "s",
+    "т": "t",
+    "у": "u",
+    "ф": "f",
+    "х": "kh",
+    "ц": "ts",
+    "ч": "ch",
+    "ш": "sh",
+    "щ": "shch",
+    "ъ": "ie",
+    "ы": "y",
+    "ь": None,
+    "э": "e",
+    "ю": "iu",
+    "я": "ia",
 }
 ru_en_mapping = {ord(k): v for k, v in _ru_en_mapping.items()}
 
@@ -210,22 +221,24 @@ def get_youtube_video_id(video_url):
         https://www.youtube-nocookie.com/embed/8SPq-9kS69M
         youtube.com/embed/8SPq-9kS69M
     """
-    if video_url.startswith(('youtu', 'www')):
-        video_url = 'https://' + video_url
+    if video_url.startswith(("youtu", "www")):
+        video_url = "https://" + video_url
     parsed = urlparse(video_url)
     video_id = None
-    if 'youtube' in parsed.hostname:
-        if parsed.path == '/watch':
+    if "youtube" in parsed.hostname:
+        if parsed.path == "/watch":
             qs = parse_qs(parsed.query)
-            video_id = qs['v'][0]
-        elif parsed.path.startswith(('/embed/', '/v/')):
-            video_id = parsed.path.split('/', maxsplit=2)[2]
-    elif 'youtu.be' in parsed.hostname:
-        video_id = parsed.path.split('/')[1]
+            video_id = qs["v"][0]
+        elif parsed.path.startswith(("/embed/", "/v/")):
+            video_id = parsed.path.split("/", maxsplit=2)[2]
+    elif "youtu.be" in parsed.hostname:
+        video_id = parsed.path.split("/")[1]
     return video_id
 
 
-def chunks(iterable: Iterable, n: int, fillvalue: Optional[Any] = None) -> Iterator[Any]:
+def chunks(
+    iterable: Iterable, n: int, fillvalue: Optional[Any] = None
+) -> Iterator[Any]:
     """
     Collect data into fixed-length chunks or blocks:
     Example:
@@ -304,5 +317,5 @@ def create_multipart_email(
     msg = EmailMultiAlternatives(
         subject, text_content, settings.DEFAULT_FROM_EMAIL, to_emails
     )
-    msg.attach_alternative(html_content, 'text/html')
+    msg.attach_alternative(html_content, "text/html")
     return msg
