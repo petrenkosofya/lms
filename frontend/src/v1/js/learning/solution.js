@@ -1,6 +1,6 @@
 import $ from 'jquery';
 
-import UberEditor from 'components/editor';
+import { initSimpleEditor } from 'components/tiptap-templates/simple/index';
 import { createNotification, getCSRFToken } from '../utils';
 import ky from 'ky'
 
@@ -21,7 +21,6 @@ const fn = {
   initCommentForm: function () {
     commentButton.on('click', function () {
       commentForm.removeClass('hidden');
-      UberEditor.reflowEditor(commentForm);
       $(this).addClass('active');
       if (solutionForm.length > 0) {
         solutionForm.addClass('hidden');
@@ -37,7 +36,6 @@ const fn = {
     if (solutionForm.length > 0) {
       solutionButton.on('click', function () {
         solutionForm.removeClass('hidden');
-        UberEditor.reflowEditor(solutionForm);
         $(this).addClass('active');
         commentForm.addClass('hidden');
         commentButton.removeClass('active');
@@ -78,12 +76,7 @@ const fn = {
     modalFormWrapper.modal({
       show: false,
     });
-    // Show EpicEditor when modal shown
-    modalFormWrapper.on('shown.bs.modal', function (event) {
-      const textarea = $(event.target).find('textarea').get(0);
-      UberEditor.init(textarea);
-      modalFormWrapper.css('opacity', '1');
-    });
+    
     // Show modal
     $('.__edit', comment).click(function (e) {
       e.preventDefault();
@@ -91,7 +84,14 @@ const fn = {
       $.get(this.href, function (data) {
         modalFormWrapper.css('opacity', '1');
         $('.inner', modalFormWrapper).html(data);
-        modalFormWrapper.modal('toggle');
+        
+        // Initialize editor for textarea in loaded content
+        const textarea = $('.inner', modalFormWrapper).find('textarea').get(0);
+        if (textarea) {
+          initSimpleEditor(textarea);
+        }
+        
+        modalFormWrapper.modal('show');
       }).fail(function (data) {
         if (data.status === 403) {
           const msg = 'Access denied. Probably, the time to edit the comment has expired.';
@@ -121,7 +121,10 @@ const fn = {
           });
           const textElement = $('.ubertext', target);
           textElement.html(json.html);
-          UberEditor.render(textElement.get(0));
+          // Highlight code in updated content
+          textElement.find('pre code').each(function(i, block) {
+            import('highlight.js').then(hljs => hljs.default.highlightElement(block));
+          });
           createNotification('Comment changed');
         } else {
           createNotification('Failed to update the comment', 'error');

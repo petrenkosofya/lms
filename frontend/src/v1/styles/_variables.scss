@@ -1,0 +1,41 @@
+// Tiptap UI Components Variables
+// Based on https://tiptap.dev/docs/ui-components/getting-started/style
+
+// Colors
+$tiptap-primary: #007bff;
+$tiptap-primary-hover: #0056b3;
+$tiptap-border: #ddd;
+$tiptap-background: #fff;
+$tiptap-toolbar-bg: #f8f9fa;
+$tiptap-text: #333;
+$tiptap-text-muted: #666;
+$tiptap-placeholder: #adb5bd;
+
+// Code colors
+$tiptap-code-bg: #f4f4f4;
+$tiptap-code-text: #e83e8c;
+$tiptap-pre-bg: #2d2d2d;
+$tiptap-pre-text: #f8f8f2;
+
+// Spacing
+$tiptap-padding-sm: 4px;
+$tiptap-padding-md: 8px;
+$tiptap-padding-lg: 12px;
+
+// Border radius
+$tiptap-radius-sm: 3px;
+$tiptap-radius-md: 4px;
+
+// Typography
+$tiptap-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+$tiptap-font-size: 14px;
+$tiptap-line-height: 1.6;
+$tiptap-code-font: 'Courier New', Courier, monospace;
+
+// Editor dimensions
+$tiptap-min-height: 200px;
+$tiptap-max-height: 600px;
+
+// Transitions
+$tiptap-transition: all 0.2s;
+

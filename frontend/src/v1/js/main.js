@@ -5,7 +5,7 @@ import 'bootstrap-select/js/bootstrap-select';
 import 'jasny-bootstrap/js/fileinput';
 
 import 'mathjax_config';
-import UberEditor from 'components/editor';
+import { initSimpleEditor } from 'components/tiptap-templates/simple/index';
 import { csrfSafeMethod, getCSRFToken, getSections, showComponentError, loadReactApplications, createNotification } from './utils';
 import hljs from 'highlight.js'
 
@@ -92,30 +92,30 @@ function configureCSRFAjax() {
 function renderText() {
   // highlight js and MathJax
   const $ubertexts = $('div.ubertext');
-  // Note: MathJax and hljs loads for each iframe separately
   if ($ubertexts.length > 0) {
-    UberEditor.preload(function () {
-      // Configure highlight js
-      hljs.configure({ tabReplace: '    ' });
-      // Render Latex and highlight code
-      $ubertexts.each(function (i, target) {
-        UberEditor.render(target);
+    // Configure highlight js
+    hljs.configure({ tabReplace: '    ' });
+    // Render Latex and highlight code (статический контент)
+    $ubertexts.each(function (i, target) {
+      $(target).find('pre code').each(function(i, block) {
+        hljs.highlightElement(block);
       });
     });
   }
 }
 
 function initUberEditors() {
-  // Replace textarea with EpicEditor
-  const $ubereditors = $('textarea.ubereditor');
-  UberEditor.cleanLocalStorage($ubereditors);
-  $ubereditors.each(function (i, textarea) {
-    const editor = UberEditor.init(textarea);
-    CSC.config.uberEditors.push(editor);
+  // Replace textarea with SimpleEditor (TipTap)
+  const $textareas = $('textarea.ubereditor');
+  const editors = [];
+  
+  $textareas.each(function (i, textarea) {
+    const editor = initSimpleEditor(textarea);
+    editors.push(editor);
   });
-  if ($ubereditors.length > 0) {
-    $('a[data-toggle="tab"]').on('shown.bs.tab', UberEditor.reflowOnTabToggle);
-  }
+  
+  // Save editors to global object for access
+  CSC.config.uberEditors = editors;
 }
 
 function initCollapsiblePanelGroups() {

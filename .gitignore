@@ -37,3 +37,4 @@ dist/
 .envrc
 flake.nix
 flake.lock
+frontend/src/v1/js/components/tiptap-templates/.backup/

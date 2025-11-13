@@ -17,24 +17,10 @@ const common = {
   context: __srcdir,
 
   entry: {
-    vendor: [
-      path.join(__srcdir, '/js/components/editor'),
-    ],
-    main: { import: path.join(__srcdir, '/js/main.js'), dependOn: 'vendor' },
-    // TODO: use 1 entry
-    teaching: {
-      import: path.join(__srcdir, '/js/teaching/index.js'),
-      dependOn: 'vendor',
-    },
-    supervising: {
-      import: path.join(__srcdir, '/js/supervising/index.js'),
-      dependOn: 'vendor',
-    },
-  },
-
-  externals: {
-    // Note: EpicEditor is a dead library.
-    EpicEditor: 'EpicEditor',
+    vendor: path.join(__srcdir, '/js/vendor.js'),
+    main: path.join(__srcdir, '/js/main.js'),
+    teaching: path.join(__srcdir, '/js/teaching/index.js'),
+    supervising: path.join(__srcdir, '/js/supervising/index.js'),
   },
 
   resolve: {
@@ -44,6 +30,7 @@ const common = {
     alias: {
       jquery: 'jquery/src/jquery',
       '~': __srcdir,
+      '@': path.join(__srcdir, '/js'),
     },
   },
 
@@ -125,14 +112,9 @@ const common = {
     splitChunks: {
       minChunks: 2,
       cacheGroups: {
-        vendor: {
-          name: 'vendor',
-          test: 'vendor',
-          enforce: true,
-        },
         forms: {
           name: 'forms',
-          test: 'components/forms',
+          test: /components[\\/]forms/,
           enforce: true,
         },
       },
