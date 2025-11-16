@@ -22,7 +22,8 @@
     border-left-color: #CFCFCF;
   }
 
-  > :last-child, > :last-child > :last-child {
+  > :last-child,
+  > :last-child> :last-child {
     margin-bottom: 0;
   }
 }
@@ -35,7 +36,8 @@
   list-style: none;
   padding: 0;
 
-  li.author-student, li.author-system {
+  li.author-student,
+  li.author-system {
     margin-right: 60px;
     margin-left: 0;
   }
@@ -72,7 +74,8 @@
     gap: 0;
   }
 
-  .next-unchecked-btn, .info-panel-row-value:not(:last-child) {
+  .next-unchecked-btn,
+  .info-panel-row-value:not(:last-child) {
     margin-bottom: 12px;
   }
 }
@@ -80,4 +83,77 @@
 .text-error {
   font-weight: bold;
   color: $color-red;
+}
+
+.inline-editor-loading {
+  margin-top: 15px;
+  padding: 20px;
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+
+  i {
+    margin-right: 8px;
+    color: #4a90e2;
+  }
+}
+
+.inline-comment-editor {
+  margin-top: 15px;
+  padding: 15px;
+  background: #fff;
+  border: 2px solid #4a90e2;
+  border-radius: 4px;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.inline-editor-form {
+  margin-bottom: 15px;
+
+  form {
+    margin-bottom: 0;
+  }
+
+  .modal-body,
+  .modal-footer {
+    padding: 0;
+    border: none;
+  }
+
+  .epiceditor-wrapper {
+    margin-bottom: 10px;
+  }
+}
+
+.inline-editor-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding-top: 10px;
+  border-top: 1px solid #e5e5e5;
+
+  .btn {
+    min-width: 80px;
+  }
+}
+
+.assignment-submission.editing {
+  border-left: 3px solid #4a90e2;
+  transition: border-left 0.2s ease;
+
+  .panel-body {
+    position: relative;
+  }
 }

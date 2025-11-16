@@ -1,8 +1,10 @@
+import $ from 'jquery';
 import { getTemplate, showComponentError } from 'utils';
 import { createNotification } from '../utils';
 import { FormValidation } from 'components/formValidator';
 import { format } from 'date-fns/fp';
 import { utcToZonedTime } from 'date-fns-tz';
+import { initInlineCommentEditing } from '../learning/solution';
 
 function initAssignmentScoreAuditLog() {
   $('.assignment-score-audit-log').click(function (e) {
@@ -18,7 +20,7 @@ function initAssignmentScoreAuditLog() {
       const dateToString = format('LLL d, yyyy HH:mm');
       const timeZone = window.__CSC__?.profile?.timezone || 'UTC';
       data.edges.forEach(node => {
-        const editor = node.changedBy ?? {firstName: 'System', lastName: ''};
+        const editor = node.changedBy ?? { firstName: 'System', lastName: '' };
         const fullName = `${editor.lastName} ${editor.firstName}`.trim();
         node.author = fullName || editor.username;
         node.source = data.sources[node.source];
@@ -95,6 +97,7 @@ const fn = {
       })
       .catch(error => showComponentError(error));
     initAssignmentScoreAuditLog();
+    initInlineCommentEditing();
   }
 };
 

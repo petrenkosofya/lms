@@ -4,9 +4,6 @@ import UberEditor from 'components/editor';
 import { createNotification, getCSRFToken } from '../utils';
 import ky from 'ky'
 
-const comment = $('.assignment-comment');
-const modalFormWrapper = $('#update-comment-model-form');
-
 const commentButton = $('#add-comment');
 const commentForm = $('#comment-form-wrapper');
 const solutionButton = $('#add-solution');
@@ -75,62 +72,206 @@ const fn = {
   },
 
   initCommentModal: function () {
-    modalFormWrapper.modal({
-      show: false,
-    });
-    // Show EpicEditor when modal shown
-    modalFormWrapper.on('shown.bs.modal', function (event) {
-      const textarea = $(event.target).find('textarea').get(0);
-      UberEditor.init(textarea);
-      modalFormWrapper.css('opacity', '1');
-    });
-    // Show modal
-    $('.__edit', comment).click(function (e) {
+    $(document).on('click', '.__edit', function (e) {
       e.preventDefault();
-      const $this = $(this);
-      $.get(this.href, function (data) {
-        modalFormWrapper.css('opacity', '1');
-        $('.inner', modalFormWrapper).html(data);
-        modalFormWrapper.modal('toggle');
-      }).fail(function (data) {
-        if (data.status === 403) {
-          const msg = 'Access denied. Probably, the time to edit the comment has expired.';
-          createNotification(msg, 'error');
-          $this.remove();
-        }
-      });
-    });
+      const $editLink = $(this);
+      const editUrl = $editLink.attr('href');
+      const $commentPanel = $editLink.closest('.assignment-submission');
 
-    modalFormWrapper.on('submit', 'form', fn.onSubmitCommentModalForm);
+      if ($commentPanel.length === 0) {
+        console.error('Comment panel not found');
+        return;
+      }
+
+      const $panelBody = $commentPanel.find('.panel-body');
+      const $ubertextDiv = $panelBody.find('.ubertext');
+      const commentId = $commentPanel.data('id');
+
+      if ($commentPanel.hasClass('editing')) {
+        return;
+      }
+
+      $editLink.hide();
+      $commentPanel.addClass('editing');
+
+      const $loadingIndicator = $('<div class="inline-editor-loading"><i class="fa fa-spinner fa-spin"></i> Loading editor...</div>');
+      if ($ubertextDiv.length > 0) {
+        $ubertextDiv.after($loadingIndicator);
+      } else {
+        $panelBody.append($loadingIndicator);
+      }
+
+      $.get(editUrl)
+        .done(function (data) {
+          $loadingIndicator.remove();
+
+          const $editorContainer = $('<div class="inline-comment-editor"></div>');
+          const $formWrapper = $('<div class="inline-editor-form"></div>').html(data);
+
+          $formWrapper.find('.modal-footer').remove();
+
+          const $helpText = $('<div class="text-muted mb-10"><small><i class="fa fa-info-circle"></i> Press Esc to cancel editing</small></div>');
+
+          const $buttonBar = $('<div class="inline-editor-buttons"></div>');
+          const $saveBtn = $('<button type="button" class="btn btn-primary btn-sm">Save</button>');
+          const $cancelBtn = $('<button type="button" class="btn btn-default btn-sm">Cancel</button>');
+          $buttonBar.append($cancelBtn).append($saveBtn);
+
+          $editorContainer.append($helpText).append($formWrapper).append($buttonBar);
+
+          if ($ubertextDiv.length > 0) {
+            $ubertextDiv.hide();
+            $ubertextDiv.after($editorContainer);
+          } else {
+            $panelBody.append($editorContainer);
+          }
+
+          const handleEscape = function (e) {
+            if (!$commentPanel.hasClass('editing')) {
+              return;
+            }
+            if (e.key === 'Escape' || e.keyCode === 27) {
+              e.preventDefault();
+              e.stopPropagation();
+              fn.cancelInlineEdit($commentPanel, $editorContainer, $ubertextDiv, $editLink);
+              return false;
+            }
+          };
+
+          $(document).on('keydown.inline-edit', handleEscape);
+          $editorContainer.on('keydown.escape-edit', handleEscape);
+
+          $cancelBtn.on('click', function () {
+            fn.cancelInlineEdit($commentPanel, $editorContainer, $ubertextDiv, $editLink);
+          });
+
+          $saveBtn.on('click', function () {
+            fn.saveInlineEdit($commentPanel, $editorContainer, $ubertextDiv, $editLink, $formWrapper, commentId);
+          });
+
+          setTimeout(() => {
+            const textarea = $editorContainer.find('textarea').get(0);
+            if (textarea) {
+              const editor = UberEditor.init(textarea);
+              $editorContainer.data('editor', editor);
+
+              try {
+                const editorDoc = editor.getElement('editor');
+                if (editorDoc && editorDoc.body) {
+                  $(editorDoc.body).on('keydown.escape-edit-iframe', function (e) {
+                    if (e.key === 'Escape' || e.keyCode === 27) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      fn.cancelInlineEdit($commentPanel, $editorContainer, $ubertextDiv, $editLink);
+                      return false;
+                    }
+                  });
+
+                  $(editorDoc).on('keydown.escape-edit-iframe', function (e) {
+                    if (e.key === 'Escape' || e.keyCode === 27) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      fn.cancelInlineEdit($commentPanel, $editorContainer, $ubertextDiv, $editLink);
+                      return false;
+                    }
+                  });
+                }
+              } catch (e) {
+                console.debug('Could not attach escape handler to editor iframe:', e);
+              }
+
+              editor.focus();
+            }
+          }, 100);
+        })
+        .fail(function (data) {
+          $loadingIndicator.remove();
+          $commentPanel.removeClass('editing');
+          $editLink.show();
+          if (data.status === 403) {
+            const msg = 'Access denied. Probably, the time to edit the comment has expired.';
+            createNotification(msg, 'error');
+            $editLink.remove();
+          } else {
+            createNotification('Failed to load edit form', 'error');
+          }
+        });
+    });
   },
 
-  onSubmitCommentModalForm: function (event) {
-    event.preventDefault();
-    let form = event.target;
-    // TODO: validate empty comment here
+  cancelInlineEdit: function ($commentPanel, $editorContainer, $ubertextDiv, $editLink) {
+    $(document).off('keydown.inline-edit');
+    $editorContainer.off('keydown.escape-edit');
+
+    try {
+      const editor = $editorContainer.data('editor');
+      if (editor) {
+        const editorDoc = editor.getElement('editor');
+        if (editorDoc) {
+          $(editorDoc).off('keydown.escape-edit-iframe');
+          if (editorDoc.body) {
+            $(editorDoc.body).off('keydown.escape-edit-iframe');
+          }
+        }
+      }
+    } catch (e) {
+    }
+
+    $editorContainer.fadeOut(200, function () {
+      $editorContainer.remove();
+      if ($ubertextDiv.length > 0) {
+        $ubertextDiv.fadeIn(200);
+      }
+      $editLink.show();
+      $commentPanel.removeClass('editing');
+    });
+  },
+
+  saveInlineEdit: function ($commentPanel, $editorContainer, $ubertextDiv, $editLink, $formWrapper, commentId) {
+    const $form = $formWrapper.find('form');
+    const $saveBtn = $editorContainer.find('.btn-primary');
+
+    $saveBtn.prop('disabled', true).text('Saving...');
+
     $.ajax({
-      url: form.action,
+      url: $form.attr('action'),
       type: 'POST',
-      data: $(form).serialize(),
+      data: $form.serialize(),
     })
       .done(function (json) {
         if (json.success === 1) {
-          modalFormWrapper.modal('hide');
-          let target = comment.filter(function () {
-            return $(this).data('id') == json.id;
+          $(document).off('keydown.inline-edit');
+          $editorContainer.off('keydown.escape-edit');
+
+          if ($ubertextDiv.length > 0) {
+            $ubertextDiv.html(json.html);
+            UberEditor.render($ubertextDiv.get(0));
+          } else {
+            const $panelBody = $commentPanel.find('.panel-body');
+            const $newUbertext = $('<div class="ubertext"></div>').html(json.html);
+            $panelBody.append($newUbertext);
+            UberEditor.render($newUbertext.get(0));
+          }
+
+          $editorContainer.fadeOut(200, function () {
+            $editorContainer.remove();
+            if ($ubertextDiv.length > 0) {
+              $ubertextDiv.fadeIn(200);
+            }
+            $editLink.show();
+            $commentPanel.removeClass('editing');
           });
-          const textElement = $('.ubertext', target);
-          textElement.html(json.html);
-          UberEditor.render(textElement.get(0));
-          createNotification('Comment changed');
+
+          createNotification('Comment updated successfully');
         } else {
+          $saveBtn.prop('disabled', false).text('Save');
           createNotification('Failed to update the comment', 'error');
         }
       })
       .fail(function () {
+        $saveBtn.prop('disabled', false).text('Save');
         createNotification('Failed to update the comment', 'error');
       });
-    return false;
   },
 };
 
@@ -138,5 +279,9 @@ export function launch() {
   fn.initCommentForm();
   fn.initSolutionForm();
   fn.initJbaTab();
+  fn.initCommentModal();
+}
+
+export function initInlineCommentEditing() {
   fn.initCommentModal();
 }
