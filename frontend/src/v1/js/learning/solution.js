@@ -253,6 +253,20 @@ const fn = {
             UberEditor.render($newUbertext.get(0));
           }
 
+          const $dateSpan = $commentPanel.find('.assignment-submission__date');
+          if (json.is_edited && json.modified) {
+            let $editedBadge = $dateSpan.find('.comment-edited-badge');
+            if ($editedBadge.length === 0) {
+              $editedBadge = $('<span class="comment-edited-badge" title="Edited: ' + json.modified + '"><i class="fa fa-pencil"></i> edited</span>');
+              if ($dateSpan.text().trim()) {
+                $dateSpan.append(' ');
+              }
+              $dateSpan.append($editedBadge);
+            } else {
+              $editedBadge.attr('title', 'Edited: ' + json.modified);
+            }
+          }
+
           $editorContainer.fadeOut(200, function () {
             $editorContainer.remove();
             if ($ubertextDiv.length > 0) {

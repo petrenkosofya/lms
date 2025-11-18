@@ -159,10 +159,15 @@ class AssignmentCommentUpdateView(generic.UpdateView):
 
     def form_valid(self, form):
         self.object = form.save()
+        self.object.refresh_from_db()
         html = render_markdown(self.object.text)
+        time_zone = self.request.user.time_zone
+        modified_local = self.object.modified_local(tz=time_zone)
         return JsonResponse({"success": 1,
                              "id": self.object.pk,
-                             "html": html})
+                             "html": html,
+                             "modified": modified_local.strftime("%d.%m.%Y %H:%M"),
+                             "is_edited": self.object.modified != self.object.created})
 
     def form_invalid(self, form):
         return JsonResponse({"success": 0, "errors": form.errors})

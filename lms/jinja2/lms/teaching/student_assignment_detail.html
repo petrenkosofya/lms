@@ -69,7 +69,14 @@
                 <div class="panel bg-gray assignment-submission assignment-{{ comment.type }}"
                      {% if request_user.is_curator or is_actual_teacher %}data-id="{{ comment.pk }}"{% endif %}>
                   <div class="panel-body">
-                    <span class="assignment-submission__date pull-right">{{ comment.created_local(tz=time_zone)|date("d.m.Y H:i") }}</span>
+                    <span class="assignment-submission__date pull-right">
+                      {{ comment.created_local(tz=time_zone)|date("d.m.Y H:i") }}
+                      {% if comment.modified != comment.created %}
+                        <span class="comment-edited-badge" title="{% trans %}Edited{% endtrans %}: {{ comment.modified_local(tz=time_zone)|date("d.m.Y H:i") }}">
+                          <i class="fa fa-pencil"></i> {% trans %}edited{% endtrans %}
+                        </span>
+                      {% endif %}
+                    </span>
                     <h5 class="assignment">{{ comment.get_author_name() }}</h5>
                     <div class="text-muted"><p>{{ get_score_status_changing_message(comment) }}</p></div>
                     {% if comment.text %}
