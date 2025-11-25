@@ -8,19 +8,34 @@ from core.tests.factories import LocationFactory, AcademicProgramFactory
 from core.timezone import UTC
 from courses.constants import AssigneeMode, AssignmentFormat, MaterialVisibilityTypes
 from courses.models import (
-    Assignment, AssignmentAttachment, Course, CourseClass,
-    CourseClassAttachment, CourseNews, CourseReview, CourseTeacher, LearningSpace,
-    MetaCourse, Semester, CourseProgramBinding
+    Assignment,
+    AssignmentAttachment,
+    Course,
+    CourseClass,
+    CourseClassAttachment,
+    CourseNews,
+    CourseReview,
+    CourseTeacher,
+    LearningSpace,
+    MetaCourse,
+    Semester,
+    CourseProgramBinding,
 )
 from courses.utils import get_current_term_pair, get_term_by_index
 from learning.services import AssignmentService
 from users.tests.factories import TeacherFactory
 
 __all__ = (
-    "MetaCourseFactory", "SemesterFactory", "CourseFactory",
-    "CourseNewsFactory", "AssignmentFactory", "CourseTeacherFactory",
-    "CourseClassFactory", "CourseClassAttachmentFactory",
-    "AssignmentAttachmentFactory", "CourseReviewFactory",
+    "MetaCourseFactory",
+    "SemesterFactory",
+    "CourseFactory",
+    "CourseNewsFactory",
+    "AssignmentFactory",
+    "CourseTeacherFactory",
+    "CourseClassFactory",
+    "CourseClassAttachmentFactory",
+    "AssignmentAttachmentFactory",
+    "CourseReviewFactory",
 )
 
 
@@ -36,17 +51,17 @@ class MetaCourseFactory(factory.django.DjangoModelFactory):
 class SemesterFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Semester
-        django_get_or_create = ('year', 'type')
+        django_get_or_create = ("year", "type")
 
     year = 2015
-    type = factory.Iterator(['spring', 'autumn'])
+    type = factory.Iterator(["spring", "autumn"])
 
     @classmethod
     def create_current(cls, **kwargs):
         """Get or create semester for current term"""
         term_pair = get_current_term_pair()
-        kwargs.pop('year', None)
-        kwargs.pop('type', None)
+        kwargs.pop("year", None)
+        kwargs.pop("type", None)
         return cls.create(year=term_pair.year, type=term_pair.type, **kwargs)
 
     @classmethod
@@ -77,9 +92,9 @@ class CourseFactory(factory.django.DjangoModelFactory):
             return
         if extracted:
             for teacher in extracted:
-                CourseTeacher(course=self,
-                              teacher=teacher,
-                              notify_by_default=True).save()
+                CourseTeacher(
+                    course=self, teacher=teacher, notify_by_default=True
+                ).save()
 
 
 class CourseTeacherFactory(factory.django.DjangoModelFactory):
@@ -105,8 +120,9 @@ class CourseNewsFactory(factory.django.DjangoModelFactory):
     course = factory.SubFactory(CourseFactory)
     title = factory.Sequence(lambda n: "Important news about testing %03d" % n)
     author = factory.SubFactory(TeacherFactory)
-    text = factory.Sequence(lambda n: ("Suddenly it turned out that testing "
-                                       "(%03d) can be useful!" % n))
+    text = factory.Sequence(
+        lambda n: ("Suddenly it turned out that testing " "(%03d) can be useful!" % n)
+    )
 
 
 class LearningSpaceFactory(factory.django.DjangoModelFactory):
@@ -122,12 +138,13 @@ class CourseClassFactory(factory.django.DjangoModelFactory):
 
     course = factory.SubFactory(CourseFactory)
     venue = factory.SubFactory(LearningSpaceFactory)
-    type = 'lecture'
+    type = "lecture"
     name = factory.Sequence(lambda n: "Test class %03d" % n)
-    description = factory.Sequence(
-        lambda n: "In this class %03d we will test" % n)
-    date = (datetime.datetime.now().replace(tzinfo=timezone.utc)
-            + datetime.timedelta(days=3)).date()
+    description = factory.Sequence(lambda n: "In this class %03d we will test" % n)
+    date = (
+        datetime.datetime.now().replace(tzinfo=datetime.timezone.utc)
+        + datetime.timedelta(days=3)
+    ).date()
     starts_at = datetime.time(hour=13, minute=0)
     ends_at = datetime.time(hour=13, minute=45)
     time_zone = UTC
@@ -154,8 +171,9 @@ class AssignmentFactory(factory.django.DjangoModelFactory):
 
     course = factory.SubFactory(CourseFactory)
     opens_at = factory.LazyAttribute(lambda o: timezone.now())
-    deadline_at = factory.Faker('date_time_between', start_date="+1d",
-                                end_date="+10d", tzinfo=UTC)
+    deadline_at = factory.Faker(
+        "date_time_between", start_date="+1d", end_date="+10d", tzinfo=UTC
+    )
     submission_type = AssignmentFormat.ONLINE
     title = factory.Sequence(lambda n: "Test assignment %03d" % n)
     text = "This is a text for a test assignment"
@@ -197,7 +215,7 @@ class AssignmentAttachmentFactory(factory.django.DjangoModelFactory):
 class CourseProgramBindingFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = CourseProgramBinding
-        django_get_or_create = ('course', 'program')
+        django_get_or_create = ("course", "program")
 
     course = factory.SubFactory(CourseFactory)
     program = factory.SubFactory(AcademicProgramFactory)
