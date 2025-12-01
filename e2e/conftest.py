@@ -58,6 +58,8 @@ def page(browser_context):
     page.close()
 
 
+from e2e.pages.login_page import LoginPage
+
 @pytest.fixture
 def authenticated_page(page: Page, live_server, django_db_blocker):
     """
@@ -77,29 +79,10 @@ def authenticated_page(page: Page, live_server, django_db_blocker):
         password = getattr(user, "raw_password", "test123foobar@!")
 
     # Navigate to login page
-    page.goto(f"{live_server.url}/login/")
-
-    # Fill login form (adjust selectors based on your actual login form)
-    # These selectors are examples - update them to match your actual login form
-    username_input = page.locator(
-        'input[name="username"], input[type="text"][name*="user"], input[id*="username"]'
-    ).first
-    password_input = page.locator(
-        'input[name="password"], input[type="password"]'
-    ).first
-    submit_button = page.locator(
-        'button[type="submit"], input[type="submit"], button:has-text("SIGN IN")'
-    ).first
-
-    if username_input.is_visible():
-        username_input.fill("testuser")
-    if password_input.is_visible():
-        password_input.fill(password)
-    if submit_button.is_visible():
-        submit_button.click()
-
-    # Wait for navigation after login
-    page.wait_for_load_state("networkidle")
+    login_page = LoginPage(page)
+    login_page.navigate(f"{live_server.url}/login/")
+    
+    login_page.login("testuser", password)
 
     return page
 

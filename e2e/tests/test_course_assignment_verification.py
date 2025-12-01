@@ -13,6 +13,8 @@ from apps.courses.tests.factories import (
     AssignmentFactory,
 )
 from apps.users.tests.factories import CuratorFactory
+from e2e.pages.login_page import LoginPage
+from e2e.pages.course_page import CourseListPage, CourseDetailPage
 
 
 @pytest.mark.e2e
@@ -29,52 +31,25 @@ def test_user_login_and_course_assignment_verification(page: Page, base_url):
     # Create user with staff privileges
     user = CuratorFactory(username="Aboba", email="aboba@test.com", is_staff=True)
     password = getattr(user, "raw_password", "12345")
-    # Override password if needed
     if password != "12345":
         user.set_password("12345")
         user.save()
         password = "12345"
 
     # Navigate to login page
-    page.goto(f"{base_url}/login/")
-    page.wait_for_load_state("networkidle")
-
-    # Fill login form
-    username_input = page.locator(
-        'input[name="username"], input[type="text"][id*="username"], #id_username'
-    ).first
-    password_input = page.locator(
-        'input[name="password"], input[type="password"], #id_password'
-    ).first
-    submit_button = page.locator(
-        'input[type="submit"], button[type="submit"], button:has-text("Sign in")'
-    ).first
-
-    username_input.fill("Aboba")
-    password_input.fill(password)
-    submit_button.click()
-
-    # Wait for navigation after login
-    page.wait_for_load_state("networkidle")
+    login_page = LoginPage(page)
+    login_page.navigate(f"{base_url}/login/")
+    login_page.login("Aboba", password)
 
     # Click Courses navigation link
-    courses_link = page.locator('a[href="/courses/"]').first
-    courses_link.click()
-
-    # Wait for navigation to courses list
-    page.wait_for_load_state("networkidle")
+    course_list_page = CourseListPage(page)
+    course_list_page.go_to_courses()
 
     # Assert on courses list page
     expect(page).to_have_url(f"{base_url}/courses/")
 
     # Click ABOBA course link
-    course_link = page.locator(
-        'a[href="/courses/2025-autumn/2-Abobik/"], a.__course:has-text("ABOBA")'
-    ).first
-    course_link.click()
-
-    # Wait for navigation to course detail page
-    page.wait_for_load_state("networkidle")
+    course_list_page.go_to_course("ABOBA")
 
     # Assert on course detail page URL
     expect(page).to_have_url(f"{base_url}/courses/2025-autumn/2-Abobik/")
@@ -83,8 +58,6 @@ def test_user_login_and_course_assignment_verification(page: Page, base_url):
     expect(page).to_have_title(re.compile(r"ABOBA, autumn 2025"))
 
     # Assert Add Assignment button is visible and has correct text
-    add_assignment_button = page.locator(
-        'a[href="/courses/2025-autumn/2-Abobik/assignments/add"], a.btn:has-text("Add assignment")'
-    ).first
-    expect(add_assignment_button).to_be_visible()
-    expect(add_assignment_button).to_contain_text("Add assignment")
+    course_detail_page = CourseDetailPage(page)
+    expect(course_detail_page.add_assignment_button).to_be_visible()
+    expect(course_detail_page.add_assignment_button).to_contain_text("Add assignment")

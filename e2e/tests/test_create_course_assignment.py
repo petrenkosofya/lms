@@ -12,15 +12,22 @@ from apps.courses.tests.factories import (
     SemesterFactory,
 )
 from apps.users.tests.factories import CuratorFactory
+from e2e.pages.login_page import LoginPage
+from e2e.pages.course_page import CourseListPage, CourseDetailPage
+from e2e.pages.assignment_page import AssignmentFormPage, AssignmentDetailPage
 
 
 @pytest.mark.e2e
 @pytest.mark.django_db
 def test_create_and_verify_course_assignment(page: Page, base_url):
     """Test creating a course assignment and verifying its details."""
+    # --- Data Setup ---
     meta_course = MetaCourseFactory(name="Test Course", slug="some-slug")
     semester = SemesterFactory(year=2025, type="autumn")
-    course = CourseFactory(id=3, meta_course=meta_course, semester=semester)
+    # We don't strictly need the ID to be 3 if we look up by name, but keeping it for consistency with original if needed.
+    # The original test used ID in URL, but I updated POM to find by text.
+    # However, the POM navigation implementation in CourseListPage assumes finding by text is enough.
+    _ = CourseFactory(id=3, meta_course=meta_course, semester=semester)
 
     user = CuratorFactory(
         username="test_user",
@@ -34,100 +41,37 @@ def test_create_and_verify_course_assignment(page: Page, base_url):
         user.save()
         password = "12345"
 
-    page.goto(f"{base_url}/login/")
-    page.wait_for_load_state("networkidle")
+    # --- Login ---
+    login_page = LoginPage(page)
+    login_page.navigate(f"{base_url}/login/")
+    login_page.login("test_user", password)
 
-    username_input = page.locator(
-        'input[name="username"], input[type="text"][id*="username"], #id_username'
-    ).first
-    password_input = page.locator(
-        'input[name="password"], input[type="password"], #id_password'
-    ).first
-    submit_button = page.locator(
-        'input[type="submit"], button[type="submit"], button:has-text("Sign in")'
-    ).first
+    # --- Navigate to Course ---
+    course_list_page = CourseListPage(page)
+    course_list_page.go_to_courses()
+    course_list_page.go_to_course("Test Course")
 
-    username_input.fill("test_user")
-    password_input.fill(password)
-    submit_button.click()
+    # --- Create Assignment ---
+    course_detail_page = CourseDetailPage(page)
+    course_detail_page.go_to_add_assignment()
 
-    page.wait_for_load_state("networkidle")
+    assignment_form_page = AssignmentFormPage(page)
+    assignment_form_page.fill_assignment_details(
+        title="Test",
+        text="Some text",
+        submission_type="online",
+        deadline_date="01.05.2029",
+        deadline_time="23:59",
+        assignee_mode="off"
+    )
+    assignment_form_page.submit()
 
-    courses_link = page.locator('a[href="/courses/"]').first
-    courses_link.click()
-
-    page.wait_for_load_state("networkidle")
-
-    course_link = page.locator(
-        'a[href="/courses/2025-autumn/3-some-slug/"], a.__course:has-text("Test Course")'
-    ).first
-    course_link.click()
-
-    page.wait_for_load_state("networkidle")
-
-    add_assignment_button = page.locator(
-        'a[href="/courses/2025-autumn/3-some-slug/assignments/add"], a.btn:has-text("Add assignment")'
-    ).first
-    add_assignment_button.click()
-
-    page.wait_for_load_state("networkidle")
-
-    title_input = page.locator(
-        '#id_assignment-title, input[name="assignment-title"]'
-    ).first
-    title_input.fill("Test")
-
-    text_input = page.locator(
-        '#id_assignment-text, textarea[name="assignment-text"]'
-    ).first
-    text_input.fill("Some text")
-
-    page.evaluate("window.scrollBy(0, 300)")
-
-    format_dropdown = page.locator(
-        '#id_assignment-submission_type, select[name="assignment-submission_type"]'
-    ).first
-    format_dropdown.select_option("online")
-
-    page.evaluate("window.scrollBy(0, 300)")
-
-    deadline_date_input = page.locator(
-        '#id_assignment-deadline_at_0, input[name="assignment-deadline_at_0"]'
-    ).first
-    deadline_date_input.fill("01.05.2029")
-    deadline_date_input.press("Enter")
-
-    deadline_time_input = page.locator(
-        '#id_assignment-deadline_at_1, input[name="assignment-deadline_at_1"]'
-    ).first
-    deadline_time_input.fill("23:59")
-
-    page.evaluate("window.scrollBy(0, 300)")
-
-    assignee_mode_dropdown = page.locator(
-        '#id_assignment-assignee_mode, select[name="assignment-assignee_mode"]'
-    ).first
-    assignee_mode_dropdown.select_option("off")
-
-    save_button = page.locator(
-        '#submit-id-save, input[type="submit"][name="save"], button[type="submit"]:has-text("Save")'
-    ).first
-    save_button.click()
-
-    page.wait_for_load_state("networkidle")
-
-    edit_button = page.locator(
-        'a.btn.btn-primary[href*="/edit"], a.btn:has-text("Edit")'
-    ).first
-    expect(edit_button).to_be_visible()
-
-    delete_button = page.locator(
-        'a.btn.btn-danger[href*="/delete"], a.btn:has-text("Delete")'
-    ).first
-    expect(delete_button).to_be_visible()
-
-    page_content = page.content()
-    assert "Some text" in page_content
-
-    deadline_display = page.locator("text=/01 May 2029/").first
-    expect(deadline_display).to_be_visible()
+    # --- Verify ---
+    assignment_detail_page = AssignmentDetailPage(page)
+    
+    expect(assignment_detail_page.edit_button).to_be_visible()
+    expect(assignment_detail_page.delete_button).to_be_visible()
+    
+    # Using expect with locators is better than `assert x in content`
+    expect(page.locator("text=Some text")).to_be_visible()
+    expect(page.locator("text=/01 May 2029/")).to_be_visible()
