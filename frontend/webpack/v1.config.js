@@ -18,7 +18,7 @@ const common = {
 
   entry: {
     vendor: [
-      path.join(__srcdir, '/js/components/editor'),
+      path.join(__srcdir, '/js/components/TiptapWrapper.jsx'),
     ],
     main: { import: path.join(__srcdir, '/js/main.js'), dependOn: 'vendor' },
     // TODO: use 1 entry
@@ -33,8 +33,7 @@ const common = {
   },
 
   externals: {
-    // Note: EpicEditor is a dead library.
-    EpicEditor: 'EpicEditor',
+    // Tiptap is now used instead of the old EpicEditor
   },
 
   resolve: {

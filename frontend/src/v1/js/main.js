@@ -5,7 +5,7 @@ import 'bootstrap-select/js/bootstrap-select';
 import 'jasny-bootstrap/js/fileinput';
 
 import 'mathjax_config';
-import UberEditor from 'components/editor';
+import TiptapWrapper from 'components/TiptapWrapper';
 import { csrfSafeMethod, getCSRFToken, getSections, showComponentError, loadReactApplications, createNotification } from './utils';
 import hljs from 'highlight.js'
 
@@ -106,15 +106,15 @@ function renderText() {
 }
 
 function initUberEditors() {
-  // Replace textarea with EpicEditor
+  // Replace textarea with Tiptap editor
   const $ubereditors = $('textarea.ubereditor');
-  UberEditor.cleanLocalStorage($ubereditors);
+  TiptapWrapper.cleanLocalStorage($ubereditors);
   $ubereditors.each(function (i, textarea) {
-    const editor = UberEditor.init(textarea);
+    const editor = TiptapWrapper.init(textarea);
     CSC.config.uberEditors.push(editor);
   });
   if ($ubereditors.length > 0) {
-    $('a[data-toggle="tab"]').on('shown.bs.tab', UberEditor.reflowOnTabToggle);
+    $('a[data-toggle="tab"]').on('shown.bs.tab', TiptapWrapper.reflowOnTabToggle);
   }
 }
 

@@ -1,6 +1,6 @@
 import $ from 'jquery';
 
-import UberEditor from 'components/editor';
+import TiptapWrapper from 'components/TiptapWrapper';
 import { createNotification, getCSRFToken } from '../utils';
 import ky from 'ky'
 
@@ -18,7 +18,7 @@ const fn = {
   initCommentForm: function () {
     commentButton.on('click', function () {
       commentForm.removeClass('hidden');
-      UberEditor.reflowEditor(commentForm);
+      TiptapWrapper.reflowEditor(commentForm);
       $(this).addClass('active');
       if (solutionForm.length > 0) {
         solutionForm.addClass('hidden');
@@ -34,7 +34,7 @@ const fn = {
     if (solutionForm.length > 0) {
       solutionButton.on('click', function () {
         solutionForm.removeClass('hidden');
-        UberEditor.reflowEditor(solutionForm);
+        TiptapWrapper.reflowEditor(solutionForm);
         $(this).addClass('active');
         commentForm.addClass('hidden');
         commentButton.removeClass('active');
@@ -152,7 +152,7 @@ const fn = {
           setTimeout(() => {
             const textarea = $editorContainer.find('textarea').get(0);
             if (textarea) {
-              const editor = UberEditor.init(textarea);
+              const editor = TiptapWrapper.init(textarea);
               $editorContainer.data('editor', editor);
 
               try {
@@ -245,12 +245,12 @@ const fn = {
 
           if ($ubertextDiv.length > 0) {
             $ubertextDiv.html(json.html);
-            UberEditor.render($ubertextDiv.get(0));
+            TiptapWrapper.render($ubertextDiv.get(0));
           } else {
             const $panelBody = $commentPanel.find('.panel-body');
             const $newUbertext = $('<div class="ubertext"></div>').html(json.html);
             $panelBody.append($newUbertext);
-            UberEditor.render($newUbertext.get(0));
+            TiptapWrapper.render($newUbertext.get(0));
           }
 
           const $dateSpan = $commentPanel.find('.assignment-submission__date');
