@@ -147,6 +147,14 @@ class StudentAssignmentListView(PermissionRequiredMixin, TemplateView):
         return context
 
     def get(self, request, *args, **kwargs):
+        filter_key = "STUDENT_ASSIGNMENT_FILTERS"
+        if request.GET:
+            request.session[filter_key] = request.GET.urlencode()
+        elif filter_key in request.session:
+            params = request.session[filter_key]
+            if params:
+                return redirect(f"{request.path}?{params}")
+
         current_term = Semester.get_current()
         enrolled_in = get_current_semester_active_courses(request.user, current_term)
         filter_form = StudentAssignmentListFilter(enrolled_in, data=request.GET)
@@ -180,6 +188,7 @@ class StudentAssignmentListView(PermissionRequiredMixin, TemplateView):
                 'format': filter_formats,
                 'status': filter_statuses
             }, doseq=True)
+            request.session["STUDENT_ASSIGNMENT_FILTERS"] = params
             return redirect(f"{url}?{params}")
         context = self.get_context_data(filter_form=filter_form,
                                         enrolled_in_courses=enrolled_in,

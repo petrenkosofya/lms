@@ -147,6 +147,22 @@ class AssignmentCheckQueueView(PermissionRequiredMixin, TemplateView):
             }
         }
 
+    def get(self, request, *args, **kwargs):
+        filter_key = "TEACHER_ASSIGNMENT_CHECK_QUEUE_FILTERS"
+        if request.GET:
+            request.session[filter_key] = request.GET.urlencode()
+        elif filter_key in request.session:
+            params = request.session[filter_key]
+            if params:
+                return redirect(f"{request.path}?{params}")
+
+        try:
+            return super().get(request, *args, **kwargs)
+        except Redirect:
+            if filter_key in request.session:
+                del request.session[filter_key]
+            raise
+
 
 # TODO: add permissions tests! Or perhaps anyone can look outside comments if I missed something :<
 # FIXME: replace with vanilla view
