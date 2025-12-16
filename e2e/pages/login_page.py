@@ -21,3 +21,4 @@ class LoginPage(BasePage):
         
         self.page.wait_for_load_state("networkidle")
 
+

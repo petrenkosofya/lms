@@ -11,3 +11,4 @@ class BasePage:
     def wait_for_url(self, url_pattern: str):
         self.page.wait_for_url(url_pattern)
 
+

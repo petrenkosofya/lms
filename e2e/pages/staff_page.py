@@ -37,3 +37,4 @@ class GradebookPage(BasePage):
         course_link.first.click()
         self.page.wait_for_load_state("networkidle")
 
+

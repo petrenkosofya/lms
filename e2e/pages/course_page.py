@@ -25,3 +25,4 @@ class CourseDetailPage(BasePage):
         self.add_assignment_button.first.click()
         self.page.wait_for_load_state("networkidle")
 
+

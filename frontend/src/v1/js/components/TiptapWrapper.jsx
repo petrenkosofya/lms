@@ -38,7 +38,7 @@ export default class TiptapWrapper {
   static init(textarea) {
     const $textarea = $(textarea);
     const $container = $('<div class="tiptap-container"/>').insertAfter($textarea);
-    
+
     const autoSaveEnabled = $textarea.data('local-persist') === true;
     const showHelpFormatting = $textarea.data('helper-formatting') === true;
     const shouldFocus = $textarea.prop('autofocus');
@@ -73,7 +73,7 @@ export default class TiptapWrapper {
         console.error('Missing attr `name` for textarea. Text restore will be buggy.');
       }
       autoSaveKey = getLocalStorageKey(textarea);
-      
+
       // Try to restore from localStorage
       const saved = localStorage.getItem(autoSaveKey);
       if (saved) {
@@ -140,7 +140,7 @@ export default class TiptapWrapper {
       _textarea: textarea,
       _root: root,
       _autoSaveKey: autoSaveKey,
-      
+
       focus() {
         // Focus is handled by Tiptap internally
         $container.find('.ProseMirror').focus();
@@ -189,7 +189,7 @@ export default class TiptapWrapper {
 
     // Handle Ctrl+Enter for quick send
     if ($textarea[0].getAttribute('data-quicksend') === 'true') {
-      $container.on('keydown', function(e) {
+      $container.on('keydown', function (e) {
         if (e.keyCode === 13 && (e.metaKey || e.ctrlKey)) {
           $textarea.closest('form').submit();
         }
@@ -197,7 +197,7 @@ export default class TiptapWrapper {
     }
 
     // Restore label behavior
-    $('label[for=id_' + textarea.name + ']').click(function() {
+    $('label[for=id_' + textarea.name + ']').click(function () {
       editorInstance.focus();
     });
 
@@ -210,15 +210,15 @@ export default class TiptapWrapper {
   /**
    * Preload required scripts (MathJax, etc.)
    */
-  static preload(callback = function() {}) {
+  static preload(callback = function () { }) {
     $('body').addClass('tex2jax_ignore');
     const scripts = [
       window.__CSC__.config.JS_SRC.MATHJAX,
     ];
     const deferred = $.Deferred();
     let chained = deferred;
-    $.each(scripts, function(i, url) {
-      chained = chained.then(function() {
+    $.each(scripts, function (i, url) {
+      chained = chained.then(function () {
         return $.ajax({
           url: url,
           dataType: 'script',
@@ -239,12 +239,12 @@ export default class TiptapWrapper {
         'Typeset',
         MathJax.Hub,
         target,
-        function() {
+        function () {
           $(target)
             .find('pre')
             .addClass('hljs')
             .find('code')
-            .each(function(i, block) {
+            .each(function (i, block) {
               const t = block.innerHTML;
               block.innerHTML = _escape(_unescape(_unescape(t)));
               hljs.highlightElement(block);
@@ -257,7 +257,7 @@ export default class TiptapWrapper {
         .find('pre')
         .addClass('hljs')
         .find('code')
-        .each(function(i, block) {
+        .each(function (i, block) {
           const t = block.innerHTML;
           block.innerHTML = _escape(_unescape(_unescape(t)));
           hljs.highlightElement(block);
@@ -279,7 +279,7 @@ export default class TiptapWrapper {
   static reflowEditor(editorWrapper) {
     // Tiptap handles this automatically, but we keep for compatibility
     const $containers = editorWrapper.find('.tiptap-container');
-    $containers.each(function() {
+    $containers.each(function () {
       // Trigger reflow if needed
       $(this).find('.ProseMirror').trigger('focus').trigger('blur');
     });

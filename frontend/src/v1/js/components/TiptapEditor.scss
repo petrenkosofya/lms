@@ -71,7 +71,7 @@
       outline: none;
       min-height: 180px;
 
-      > * + * {
+      >*+* {
         margin-top: 0.75em;
       }
 
@@ -181,6 +181,44 @@
           color: #0056b3;
         }
       }
+
+      // Mathematics extension styles
+      .tiptap-mathematics-render {
+        padding: 0 0.25rem;
+
+        &--editable {
+          cursor: pointer;
+          transition: background 0.2s;
+
+          &:hover {
+            background: #eee;
+          }
+        }
+      }
+
+      .tiptap-mathematics-render {
+        border-radius: 0.25rem;
+
+        &[data-type='inline-math'] {
+          display: inline-block;
+        }
+
+        &[data-type='block-math'] {
+          display: block;
+          margin: 1rem 0;
+          padding: 1rem;
+          text-align: center;
+        }
+
+        &.inline-math-error,
+        &.block-math-error {
+          background: #fee;
+          color: #c00;
+          border: 1px solid #c00;
+          padding: 0.5rem;
+          border-radius: 0.25rem;
+        }
+      }
     }
   }
 
@@ -243,5 +281,3 @@
     }
   }
 }
-
-

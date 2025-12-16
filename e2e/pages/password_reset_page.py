@@ -29,3 +29,4 @@ class PasswordResetPage(BasePage):
         expect(self.error_message.first).to_be_visible()
         expect(self.error_message.first).to_contain_text(text)
 
+

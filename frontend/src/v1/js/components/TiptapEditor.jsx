@@ -1,9 +1,14 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import { TextStyle } from '@tiptap/extension-text-style';
+import Mathematics from '@tiptap/extension-mathematics';
+import 'katex/dist/katex.min.css';
 import './TiptapEditor.scss';
+
+// Ref to store editor instance for onClick handlers (needed because editor doesn't exist when callbacks are defined)
+const editorRef = { current: null };
 
 /**
  * Tiptap Editor Component
@@ -23,6 +28,7 @@ const TiptapEditor = ({
     const [editorState, setEditorState] = useState(0); // Force re-render counter
 
     const editor = useEditor({
+        shouldRerenderOnTransaction: true,
         extensions: [
             StarterKit.configure({
                 heading: {
@@ -36,6 +42,63 @@ const TiptapEditor = ({
             }),
             Underline,
             TextStyle,
+            Mathematics.configure({
+                katexOptions: {
+                    throwOnError: false,
+                },
+                blockOptions: {
+                    onClick: (node, pos) => {
+                        const ed = editorRef.current;
+                        if (!ed) return;
+                        const oldLatex = node.attrs.latex;
+                        const newLatex = prompt('Edit formula:', oldLatex);
+                        if (newLatex && newLatex !== oldLatex) {
+                            // Find the node by searching through the document
+                            let foundPos = null;
+                            ed.state.doc.descendants((n, p) => {
+                                if (n.type.name === 'blockMath' && n.attrs.latex === oldLatex && foundPos === null) {
+                                    foundPos = p;
+                                    return false;
+                                }
+                            });
+                            if (foundPos !== null) {
+                                const tr = ed.state.tr;
+                                const currentNode = ed.state.doc.nodeAt(foundPos);
+                                if (currentNode) {
+                                    tr.replaceWith(foundPos, foundPos + currentNode.nodeSize, ed.schema.nodes.blockMath.create({ latex: newLatex }));
+                                    ed.view.dispatch(tr);
+                                }
+                            }
+                        }
+                    },
+                },
+                inlineOptions: {
+                    onClick: (node, pos) => {
+                        const ed = editorRef.current;
+                        if (!ed) return;
+                        const oldLatex = node.attrs.latex;
+                        const newLatex = prompt('Edit formula:', oldLatex);
+                        if (newLatex && newLatex !== oldLatex) {
+                            // Find the node by searching through the document
+                            let foundPos = null;
+                            ed.state.doc.descendants((n, p) => {
+                                if (n.type.name === 'inlineMath' && n.attrs.latex === oldLatex && foundPos === null) {
+                                    foundPos = p;
+                                    return false;
+                                }
+                            });
+                            if (foundPos !== null) {
+                                const tr = ed.state.tr;
+                                const currentNode = ed.state.doc.nodeAt(foundPos);
+                                if (currentNode) {
+                                    tr.replaceWith(foundPos, foundPos + currentNode.nodeSize, ed.schema.nodes.inlineMath.create({ latex: newLatex }));
+                                    ed.view.dispatch(tr);
+                                }
+                            }
+                        }
+                    },
+                },
+            }),
         ],
         content,
         editable,
@@ -58,6 +121,14 @@ const TiptapEditor = ({
         },
         immediatelyRender: false,
     });
+
+    // Update editorRef for onClick handlers
+    useEffect(() => {
+        editorRef.current = editor;
+        return () => {
+            editorRef.current = null;
+        };
+    }, [editor]);
 
     useEffect(() => {
         if (editor && content !== editor.getHTML()) {
@@ -222,6 +293,43 @@ const TiptapEditor = ({
                         title="Horizontal Rule"
                     >
                         —
+                    </button>
+                    <span className="tiptap-menubar__separator"></span>
+                    <button
+                        onMouseDown={(e) => {
+                            e.preventDefault();
+                            const hasSelection = !editor.state.selection.empty;
+                            if (hasSelection) {
+                                editor.chain().setInlineMath().focus().run();
+                            } else {
+                                const latex = prompt('Insert LaTeX:', '');
+                                if (latex) {
+                                    editor.chain().insertInlineMath({ latex }).focus().run();
+                                }
+                            }
+                        }}
+                        type="button"
+                        title="Inline Math (LaTeX)"
+                    >
+                        Σ
+                    </button>
+                    <button
+                        onMouseDown={(e) => {
+                            e.preventDefault();
+                            const hasSelection = !editor.state.selection.empty;
+                            if (hasSelection) {
+                                editor.chain().setBlockMath().focus().run();
+                            } else {
+                                const latex = prompt('Insert LaTeX (block):', '');
+                                if (latex) {
+                                    editor.chain().insertBlockMath({ latex }).focus().run();
+                                }
+                            }
+                        }}
+                        type="button"
+                        title="Block Math (LaTeX)"
+                    >
+                        ∫
                     </button>
                 </div>
             </div>

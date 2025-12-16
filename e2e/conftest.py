@@ -31,6 +31,7 @@ def browser(playwright, browser_type):
     """Browser instance for the test session."""
     browser = browser_type.launch(
         headless=False,
+        slow_mo=1000
     )
     yield browser
     browser.close()

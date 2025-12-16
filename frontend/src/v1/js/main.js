@@ -94,12 +94,12 @@ function renderText() {
   const $ubertexts = $('div.ubertext');
   // Note: MathJax and hljs loads for each iframe separately
   if ($ubertexts.length > 0) {
-    UberEditor.preload(function () {
+    TiptapWrapper.preload(function () {
       // Configure highlight js
       hljs.configure({ tabReplace: '    ' });
       // Render Latex and highlight code
       $ubertexts.each(function (i, target) {
-        UberEditor.render(target);
+        TiptapWrapper.render(target);
       });
     });
   }

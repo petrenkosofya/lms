@@ -53,3 +53,4 @@ class AssignmentDetailPage(BasePage):
          return self.page.locator(f"text=/{date_str}/").first.is_visible()
 
 
+
